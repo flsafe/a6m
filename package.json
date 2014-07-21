@@ -1,0 +1,13 @@
+{
+  "name": "A6M",
+  "description": "A service for removing duplicate businesses",
+  "author": "Frank Licea",
+  "dependencies": {},
+  "devDependencies": {
+    "jasmine-node": "",
+    "karma": "",
+    "karma-chrome-launcher": "^0.1.4",
+    "karma-cli": "",
+    "karma-jasmine": ""
+  }
+}
