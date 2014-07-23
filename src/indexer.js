@@ -19,8 +19,8 @@ var Indexer = module.exports = function (filename) {
 * to the postingId.
 *
 * @method appendToPosting
-* @param {Integer} The posting (document) id
-* @param {Array} An array of string terms
+* @param {Integer} postingId The posting (document) id.
+* @param {Array} terms An array of string terms.
 */
 
 Indexer.prototype.appendToPosting = function (postingId, terms) {
@@ -39,8 +39,6 @@ Indexer.prototype.appendToPosting = function (postingId, terms) {
 * Each call to flush writes what is considered one block of the entire index.
 * After each call to flush() the indexer will be reset to accept appending to a
 * new block.
-*
-* @param {String} filename The name of the file to write to.
 */
 
 Indexer.prototype.flush = function () {
@@ -71,21 +69,12 @@ Indexer.prototype.fillBlockBuffer = function () {
 }
 
 /**
-* Returns the file name were the index block is written
+* Returns the file name of the index block created
 * when flush() is called.
 */
 
 Indexer.prototype.currentBlockName = function () {
   return this.filename + '_' + this.blockNumber;
-};
-
-/**
-* Increments the block number used in the filename
-* of the index block written when flush() is called.
-*/
-
-Indexer.prototype._incrementBlockNumber = function () {
-  this.blockNumber += 1;
 };
 
 /**
@@ -99,8 +88,16 @@ Indexer.prototype.resetForNextBlock = function () {
 };
 
 /**
-* Creates and returns a buffer containing the term and posting ids
-* in binary form.
+* Increments the block number used in index block file name
+* when flush() is called.
+*/
+
+Indexer.prototype._incrementBlockNumber = function () {
+  this.blockNumber += 1;
+};
+
+/**
+* Creates and returns a binary buffer containing the term and posting ids.
 *
 * @param {String} term The term associated with the postingIds.
 * @param {Array} postingIds An array of posting ids.
@@ -119,14 +116,14 @@ Indexer.prototype._appendToBuffer = function (term, postingIds) {
 };
 
 /**
-* Returns a string that is always left padded to length 20 using spaces.
+* Returns a string that is always length 20. Left padded using spaces.
 *
-* @param {String} string The string to left pad.
+* @param {String} str The string to left pad.
 */
 
 function padToLength20(str) {
   var len = 20;
-  var arr = Array(len)
+  var arr = new Array(len);
   for (var i = 0 ; i < arr.length ; i++) {
     arr[i] = ' ';
   }
