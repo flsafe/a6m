@@ -39,6 +39,7 @@ Indexer.prototype.appendToPosting = function (postingId, terms) {
 * [term][number of posting ids][posting ids][term2]...
 *
 * The terms and posting ids are written in ascending order.
+* After the write to disk is complete this.buffer will be null.
 *
 * @param {String} filename The name of the file to write to.
 */
@@ -51,8 +52,11 @@ Indexer.prototype.flush = function () {
     var postIds = self.dictionary[term].sort(function (a,b) {return a-b;});
     self._appendToBuffer(term, postIds);
   });
-  console.log(this.buffer.result());
-  this.buffer = Object.create(null);
+
+  fs.appendFile(this.filename, this.buffer, function (err) {
+    if (err) throw err;
+    self.buffer = null;
+  });
 };
 
 /**
@@ -72,6 +76,12 @@ Indexer.prototype._appendToBuffer = function (term, postingIds) {
     self.buffer = self.buffer.uint32le(pid);
   });
 };
+
+/**
+* Returns a string that is always left padded to length 20 using spaces.
+*
+* @param {String} string The string to left pad.
+*/
 
 function padToLength20(str) {
   var len = 20;
