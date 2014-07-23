@@ -9,8 +9,9 @@ var fs = require('fs');
 
 var Indexer = module.exports = function (filename) {
   this.dictionary = Object.create(null);
+  this.blockNumber = 1;
   this.filename = filename;
-  this.buffer = Concentrate();
+  this.buffer = null;
 };
 
 /**
@@ -34,12 +35,10 @@ Indexer.prototype.appendToPosting = function (postingId, terms) {
 };
 
 /**
-* Writes the current dictionary to disk in the following format:
-*
-* [term][number of posting ids][posting ids][term2]...
-*
-* The terms and posting ids are written in ascending order.
-* After the write to disk is complete this.buffer will be null.
+* Writes the current dictionary to disk.
+* Each call to flush writes what is considered one block of the entire index.
+* After each call to flush() the indexer will be reset to accept appending to a
+* new block.
 *
 * @param {String} filename The name of the file to write to.
 */
@@ -47,16 +46,56 @@ Indexer.prototype.appendToPosting = function (postingId, terms) {
 Indexer.prototype.flush = function () {
   var self = this;
 
+  this.fillBlockBuffer();
+
+  fs.appendFile(this.currentBlockName(), this.buffer.copy(), function (err) {
+    if (err) throw err;
+  });
+  self.resetForNextBlock();
+};
+
+/**
+* Fills the binary block buffer in the following format:
+* [term][number of posting ids][posting ids][term2]...
+* The terms and posting ids in each block are written in ascending order.
+*/
+
+Indexer.prototype.fillBlockBuffer = function () {
+  var self = this;
+
   var terms = Object.keys(this.dictionary).sort();
   terms.forEach(function (term) {
     var postIds = self.dictionary[term].sort(function (a,b) {return a-b;});
     self._appendToBuffer(term, postIds);
   });
+}
 
-  fs.appendFile(this.filename, this.buffer, function (err) {
-    if (err) throw err;
-    self.buffer = null;
-  });
+/**
+* Returns the file name were the index block is written
+* when flush() is called.
+*/
+
+Indexer.prototype.currentBlockName = function () {
+  return this.filename + '_' + this.blockNumber;
+};
+
+/**
+* Increments the block number used in the filename
+* of the index block written when flush() is called.
+*/
+
+Indexer.prototype._incrementBlockNumber = function () {
+  this.blockNumber += 1;
+};
+
+/**
+* Reset the indexer to prepare for appending to a new block.
+*/
+
+Indexer.prototype.resetForNextBlock = function () {
+  this.buffer = null;
+  this.dictionary = Object.create(null);
+  this._incrementBlockNumber();
 };
 
 /**
@@ -69,6 +108,8 @@ Indexer.prototype.flush = function () {
 
 Indexer.prototype._appendToBuffer = function (term, postingIds) {
   var self = this;
+
+  if (this.buffer == null) this.buffer = Concentrate();
 
   this.buffer = this.buffer.string(padToLength20(term));
   this.buffer = this.buffer.uint32le(postingIds.length)
