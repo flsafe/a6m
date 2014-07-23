@@ -8,6 +8,9 @@
     "karma": "",
     "karma-chrome-launcher": "^0.1.4",
     "karma-cli": "",
-    "karma-jasmine": ""
+    "karma-jasmine": "",
+    "jshint": "",
+    "concentrate":"",
+    "dissolve": ""
   }
 }
