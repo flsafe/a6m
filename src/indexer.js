@@ -19,7 +19,7 @@ var Indexer = module.exports = function (filename) {
 * to the postingId.
 *
 * @method appendToPosting
-* @param {Integer} postingId The posting (document) id.
+* @param {Number} postingId The posting (document) id.
 * @param {Array} terms An array of string terms.
 */
 
@@ -50,6 +50,14 @@ Indexer.prototype.flush = function () {
     if (err) throw err;
   });
   self.resetForNextBlock();
+};
+
+/**
+ * Merges the index blocks into one index file.
+ */
+
+Indexer.prototype.merge = function () {
+
 };
 
 /**
@@ -109,7 +117,7 @@ Indexer.prototype._appendToBuffer = function (term, postingIds) {
   if (this.buffer == null) this.buffer = Concentrate();
 
   this.buffer = this.buffer.string(padToLength20(term));
-  this.buffer = this.buffer.uint32le(postingIds.length)
+  this.buffer = this.buffer.uint32le(postingIds.length);
   postingIds.forEach(function (pid) {
     self.buffer = self.buffer.uint32le(pid);
   });

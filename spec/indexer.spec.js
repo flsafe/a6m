@@ -65,4 +65,15 @@ describe('Indexer', function () {
             })
         });
 	});
+
+    describe('merge', function () {
+        it('merges all the index block files into one index file', function () {
+            indexer.appendToPosting(1, ['a']);
+            indexer.flush();
+            indexer.appendToPosting(2, ['b']);
+            indexer.merge();
+            // Expect one merged file, such that when loaded is an object:
+            // {'a': [1], 'b': [2]}
+        }) ;
+    });
 });
