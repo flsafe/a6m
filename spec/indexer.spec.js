@@ -1,5 +1,6 @@
 var Indexer = require('../src/indexer');
 var fs = require('fs');
+var _ = require('underscore');
 
 describe('Indexer', function () {
 	var indexer;
@@ -22,9 +23,8 @@ describe('Indexer', function () {
 
 	describe('flush', function () {
         afterEach(function () {
-            for (var i = 1 ; i < indexer.blockNumber ; i++) {
-                fs.unlink(indexFile + '_' + i);
-            }
+            _.each(indexer.getBlockNames, function (bname) {fs.unlink(bname)})
+
         });
 
         it('writes the dictionary to disk with the block number in the filename', function () {
@@ -74,6 +74,32 @@ describe('Indexer', function () {
             indexer.merge();
             // Expect one merged file, such that when loaded is an object:
             // {'a': [1], 'b': [2]}
+        }) ;
+    });
+
+
+    describe('openBlockFiles', function () {
+        afterEach(function () {
+            for (var i = 1 ; i < indexer.blockNumber ; i++) {
+                fs.unlink(indexFile + '_' + i);
+            }
+        });
+
+        it('returns the filenames of all the blocks that were written', function () {
+            indexer.appendToPosting(1, ['a']);
+            indexer.flush();
+            indexer.appendToPosting(2, ['b']);
+            indexer.flush();
+
+            var fds;
+            indexer.openBlockFiles(function(r) { fds = r });
+
+            waitsFor(function () {
+                return fds && fds !== null;
+            });
+            runs(function  () {
+                expect(indexer.fds.length).toBeGreaterThan(0);
+            });
         }) ;
     });
 });

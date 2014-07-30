@@ -5,13 +5,18 @@
 
 var Concentrate = require('concentrate');
 var Dissolve = require('dissolve');
+
 var fs = require('fs');
+
+var _ = require('underscore');
+var Q = require('q');
 
 var Indexer = module.exports = function (filename) {
   this.dictionary = Object.create(null);
   this.blockNumber = 1;
   this.filename = filename;
   this.buffer = null;
+  this.fds = null;
 };
 
 /**
@@ -46,7 +51,7 @@ Indexer.prototype.flush = function () {
 
   this.fillBlockBuffer();
 
-  fs.appendFile(this.currentBlockName(), this.buffer.copy(), function (err) {
+  fs.appendFile(this.toBlockName(this.blockNumber), this.buffer.copy(), function (err) {
     if (err) throw err;
   });
   self.resetForNextBlock();
@@ -57,7 +62,7 @@ Indexer.prototype.flush = function () {
  */
 
 Indexer.prototype.merge = function () {
-
+  var self = this;
 };
 
 /**
@@ -79,10 +84,12 @@ Indexer.prototype.fillBlockBuffer = function () {
 /**
 * Returns the file name of the index block created
 * when flush() is called.
+*
+* @param {Number} i The block number to use in the block filename.
 */
 
-Indexer.prototype.currentBlockName = function () {
-  return this.filename + '_' + this.blockNumber;
+Indexer.prototype.toBlockName = function (i) {
+  return this.filename + '_' + i;
 };
 
 /**
@@ -93,6 +100,60 @@ Indexer.prototype.resetForNextBlock = function () {
   this.buffer = null;
   this.dictionary = Object.create(null);
   this._incrementBlockNumber();
+};
+
+/**
+ * Returns the file descriptors for each block.
+ */
+
+Indexer.prototype.openBlockFiles = function (cb) {
+  return this._openFiles(this.getBlockNames(), cb);
+};
+
+/**
+ * Returns the block file names.
+ */
+
+Indexer.prototype.getBlockNames = function () {
+  var self = this;
+
+ return _.chain(_.range(1, this.blockNumber))
+         .map(function (i) {return self.toBlockName(i)})
+         .value();
+};
+
+/**
+ * Opens and returns the file descriptors for each given file name.
+ * The file descriptors are returned via the callback function.
+ *
+ * @param {Array} fileNames An array of file names
+ * to return the file descriptors for.
+
+ * @param {Function} cb Called with an array containing open file descriptors
+ * or an error object if there is an error in opening the files.
+ */
+
+Indexer.prototype._openFiles = function (fileNames, cb) {
+  var self = this;
+
+  var openProms = _.chain(fileNames)
+                  .map(function (name) {
+                    var defered = Q.defer();
+                    fs.open(name, 'r', function (err, fd) {
+                                        if (err) {
+                                          defered.reject(err);
+                                        } else {
+                                          defered.resolve(fd) ;
+                                        }
+                                      });
+                    return defered.promise;
+                  })
+                  .value();
+
+  Q.all(openProms)
+   .then(function (results) { self.fds = results ; cb(results) })
+   .fail(function (err) { cb(err) })
+   .done();
 };
 
 /**
