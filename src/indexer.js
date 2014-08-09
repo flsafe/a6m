@@ -151,8 +151,8 @@ Indexer.prototype._openFiles = function (fileNames, cb) {
                   .value();
 
   Q.all(openProms)
-   .then(function (results) { self.fds = results ; cb(results) })
-   .fail(function (err) { cb(err) })
+   .then(function (results) { self.fds = results ; cb(null, results) })
+   .fail(function (err) { cb(err, []) })
    .done();
 };
 

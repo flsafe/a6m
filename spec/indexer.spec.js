@@ -92,7 +92,7 @@ describe('Indexer', function () {
             indexer.flush();
 
             var fds;
-            indexer.openBlockFiles(function(r) { fds = r });
+            indexer.openBlockFiles(function(e, r) { fds = r });
 
             waitsFor(function () {
                 return fds && fds !== null;
